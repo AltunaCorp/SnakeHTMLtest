@@ -118,75 +118,15 @@ pre{white-space:pre-wrap;word-break:break-word;color:#9ca3af}
 
 <!-- Panel lateral derecho -->
 <div id="ui">
-  <div id="title">Snake Avanzado</div>
+  
 
-  <div class="card">
-    <div>Vidas: <span id="livesLabel">3</span></div>
-    <div>Puntuación: <span id="scoreLabel">0</span></div>
-  </div>
+
 
   <div class="card">
     <button class="btn" id="btnPause">Pausa</button>
     <button class="btn" id="btnRestart">Reiniciar</button>
-  </div>
+  </div> 
 
-  <div class="card">
-    <div class="small">Controles: Flechas / WASD · Enter = seleccionar</div>
-  </div>
-
-  <div class="card" id="menuCard">
-    <div style="font-weight:700;margin-bottom:6px">Menú</div>
-    <div id="menuOptions">
-      <div class="menu-item selected" data-index="0">Básico <span class="small">velocidad lenta</span></div>
-      <div class="menu-item" data-index="1">Fácil <span class="small">menos obstáculos</span></div>
-      <div class="menu-item" data-index="2">Normal <span class="small">balanceado</span></div>
-      <div class="menu-item" data-index="3">Difícil <span class="small">más obstáculos</span></div>
-    </div>
-    <div style="margin-top:10px;">
-      <button class="btn" id="btnStart">Iniciar juego</button>
-      <button class="btn" id="btnTutorial">Tutorial</button>
-    </div>
-  </div>
-
-  <div class="card" id="statsCard">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div>
-        <div style="font-weight:700" id="labelMode">Modo: Normal</div>
-        <div class="muted" id="labelInfo">Puntaje, vidas y velocidad</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-weight:800;font-size:20px" id="scoreLabel">0</div>
-        <div class="small">Puntos</div>
-      </div>
-    </div>
-
-    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:10px 0">
-
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <div class="small">Vidas: <span id="livesLabel">1</span></div>
-      <div class="small">Comidas: <span id="foodCount">0</span></div>
-      <div class="small">Vel (ms): <span id="tickLabel">100</span></div>
-    </div>
-  </div>
-
-  <div class="card" id="controlsCard">
-    <div style="font-weight:700">Opciones rápidas</div>
-    <div style="margin-top:8px" class="small">
-      <div>- Espacio: Pausa/Continuar</div>
-      <div>- Enter: Seleccionar en menú / Reiniciar tras Game Over</div>
-      <div>- Esc: Volver al menú</div>
-    </div>
-  </div>
-
-  <div class="card" id="credits">
-    <div style="font-weight:700">Detalles</div>
-    <div class="muted small" style="margin-top:8px">
-      - Comida roja (crece)<br>
-      - Veneno violeta (pierde juego)<br>
-      - Corazón amarillo (da vida extra)<br>
-      - Obstáculos grises (matan)<br>
-    </div>
-  </div>
 </div>
 
 <!-- Banner superior REAL -->
@@ -221,10 +161,7 @@ pre{white-space:pre-wrap;word-break:break-word;color:#9ca3af}
       <div class="card" id="menuCard">
         <div style="font-weight:700;margin-bottom:6px">Menú</div>
         <div id="menuOptions">
-          <div class="menu-item selected" data-index="0">Básico <span class="small">velocidad lenta</span></div>
-          <div class="menu-item" data-index="1">Fácil <span class="small">menos obstaculos</span></div>
-          <div class="menu-item" data-index="2">Normal <span class="small">balanceado</span></div>
-          <div class="menu-item" data-index="3">Difícil <span class="small">más obstáculos</span></div>
+
         </div>
         <div style="margin-top:10px;">
           <button class="btn" id="btnStart">Iniciar juego</button>
@@ -306,14 +243,29 @@ window.addEventListener('resize', () => { resizeCanvas(); engine && engine.onRes
 
 /* ---------- Dificultades ---------- */
 const DIFFICULTIES = [
-  { name: 'Básico', speedMs: 170, numObstacles: 3, poisonChance: 0.00, extraLifeChance: 0.00 },
+  { name: 'Básico', speedMs: 150, numObstacles: 0, poisonChance: 0.00, extraLifeChance: 0.00 },
   { name: 'Fácil',  speedMs: 140, numObstacles: 6, poisonChance: 0.03, extraLifeChance: 0.03 },
   { name: 'Normal', speedMs: 110, numObstacles: 10, poisonChance: 0.08, extraLifeChance: 0.02 },
-  { name: 'Difícil',speedMs: 85,  numObstacles: 16, poisonChance: 0.14, extraLifeChance: 0.01 }
+  { name: 'Difícil',speedMs: 85,  numObstacles: 16, poisonChance: 0.16, extraLifeChance: 0.01 },
+  { name: 'Extremo',speedMs: 70,  numObstacles: 20, poisonChance: 0.25, extraLifeChance: 0.005 }
 ];
 
 /* ---------- Colores ---------- */
-const snakeColors = ["#22c55e", "#3b82f6", "#eab308", "#f97316", "#a855f7"]; // 5 colores
+const snakeColors = [
+  "#FFD700", // Dorado brillante
+  "#FF0000", // Rojo fuerte
+  "#FF7F00", // Naranja vivo
+  "#ADFF2F", // Verde limón explosivo
+  "#00FF7F", // Verde esmeralda fluorescente
+  "#00BFFF", // Celeste intenso
+  "#1E90FF", // Azul brillante
+  "#8A2BE2", // Violeta eléctrico
+  "#FF00FF", // Fucsia neón
+  "#FF1493"  // Rosa fuerte
+];
+
+
+ // 5 colores
 const foodColor = '#f43f5e'; // rojo
 const poisonColor = '#9b5de5'; // violeta
 const heartColor = '#ffd166'; // amarillo
@@ -450,7 +402,7 @@ function randomFreeCell(){
 function tick(){
   if(!engine.running || engine.paused || engine.gameOver) return;
 
-  // apply direction
+  // aplicar dirección
   engine.dir = engine.nextDir;
   const head = { x: engine.snake[0].x + engine.dir.x, y: engine.snake[0].y + engine.dir.y };
 
@@ -460,15 +412,14 @@ function tick(){
   if(head.y < 0) head.y = engine.rows - 1;
   if(head.y >= engine.rows) head.y = 0;
 
-  // collision with self or obstacle
+  // colisión con sí mismo o con obstáculos
   if(engine.snake.some(s => posEq(s, head)) || engine.obstacles.some(o => posEq(o, head))){
-    // lose one life or game over
     engine.lives -= 1;
     if(engine.lives <= 0){
       engine.gameOver = true;
       engine.running = false;
     } else {
-      // respawn snake in center and keep score
+      // respawn snake en el centro, mantener score
       const sx = Math.floor(engine.cols/2), sy = Math.floor(engine.rows/2);
       engine.snake = [{x:sx,y:sy},{x:sx-1,y:sy},{x:sx-2,y:sy}];
       engine.dir = {x:1,y:0};
@@ -480,39 +431,81 @@ function tick(){
 
   const ateFood = engine.food && posEq(head, engine.food);
   const atePoison = engine.poison && posEq(head, engine.poison);
-  const ateHeart = engine.heart && posEq(head, engine.heart);
 
   engine.snake.unshift(head);
-  if(!ateFood && !ateHeart) engine.snake.pop();
+  if(!ateFood) engine.snake.pop();
 
   if(ateFood){
     engine.score++;
     engine.foodEaten++;
-    // color change every 5 foods
-    if(engine.score % 5 === 0) engine.colorIndex = (engine.colorIndex + 1) % snakeColors.length;
-    // respawn food after eating - ensure only one food exists
+
+    // cada 5 comidas aumenta la velocidad y cambia color
+    if(engine.score % 5 === 0){
+      engine.tickMs *= 0.95;
+      engine.colorIndex = (engine.colorIndex + 1) % snakeColors.length;
+    }
+
+    // respawn food
     engine.food = randomFreeCell();
-    // chance to respawn poison/heart according to difficulty
+
+    // chance de generar veneno según dificultad
     const diff = DIFFICULTIES[engine.difficultyIndex];
-    if(Math.random() < diff.poisonChance) engine.poison = randomFreeCell(); // may be null->set
-    if(Math.random() < diff.extraLifeChance && !engine.heart) engine.heart = randomFreeCell();
+    if(Math.random() < diff.poisonChance) engine.poison = randomFreeCell();
+
     renderUI();
   }
 
-  if(ateHeart){
-    engine.lives = Math.min(engine.lives + 1, 3);
-    engine.heart = null;
-    renderUI();
-  }
+  // ---------- Heart logic ----------
+  if(!engine.heart && engine.foodEaten >= 1){ // aparecer desde la primera comida
+    engine.heart = {
+      floatX: Math.random() * (canvas.width - engine.cell) + engine.cell/2,
+      floatY: Math.random() * (canvas.height - engine.cell) + engine.cell/2,
+      dx: (Math.random() * 2 - 1) * 4.5,
+      dy: (Math.random() * 2 - 1) * 4.5,
+      radius: engine.cell * 0.35
+    };
+}
+
+if(engine.heart){
+    // mover corazón
+    engine.heart.floatX += engine.heart.dx;
+    engine.heart.floatY += engine.heart.dy;
+
+    // rebote en bordes
+    if(engine.heart.floatX - engine.heart.radius < 0 || engine.heart.floatX + engine.heart.radius > canvas.width)
+      engine.heart.dx *= -1;
+    if(engine.heart.floatY - engine.heart.radius < 0 || engine.heart.floatY + engine.heart.radius > canvas.height)
+      engine.heart.dy *= -1;
+
+    // cambio de dirección aleatorio (1 de cada 60 ticks aprox)
+    if(Math.random() < 1/60){
+      engine.heart.dx = (Math.random() * 2 - 1) * 4.5;
+      engine.heart.dy = (Math.random() * 2 - 1) * 4.5;
+    }
+
+    // colisión con la serpiente (cabeza)
+    const headPxX = (head.x + 0.5) * engine.cell;
+    const headPxY = (head.y + 0.5) * engine.cell;
+    const dx = engine.heart.floatX - headPxX;
+    const dy = engine.heart.floatY - headPxY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    if(dist < engine.heart.radius + engine.cell/2){
+      engine.lives = Math.min(engine.lives + 1, 3);
+      engine.heart = null;
+      renderUI();
+    }
+}
+
 
   if(atePoison){
-    // poison causes immediate game over
     engine.gameOver = true;
     engine.running = false;
     renderUI();
     return;
   }
 }
+
 
 /* ---------- Main render ---------- */
 function draw(){
@@ -546,10 +539,28 @@ function draw(){
   }
 
   // Heart
-  if(engine.heart){
+  // ---------- Draw Heart (solo) ----------
+if(engine.heart){
     ctx.fillStyle = heartColor;
-    roundFillCircle(engine.heart.x*cell + cell/2, engine.heart.y*cell + cell/2, cell*0.28);
-  }
+    ctx.beginPath();
+    ctx.arc(engine.heart.floatX, engine.heart.floatY, engine.heart.radius, 0, Math.PI*2);
+    ctx.fill();
+
+  // movimiento oscilante constante
+  engine.frameCount = (engine.frameCount || 0) + 1; // contador de frames
+
+  const t = engine.frameCount / 10; // ajusta velocidad del movimiento
+  const heartOscX = Math.sin(t) * 0.25; // amplitud horizontal
+  const heartOscY = Math.cos(t) * 0.25; // amplitud vertical
+
+  // calculamos posición con offset +0.5 para centrar en la celda3
+  const hx = (engine.heart.x + 0.5 + heartOscX) * engine.cell;
+  const hy = (engine.heart.y + 0.5 + heartOscY) * engine.cell;
+
+  roundFillCircle(hx, hy, engine.cell * 0.28);
+
+}
+
 
   // Snake color interpolation: progress within 5
   const nextIdx = (engine.colorIndex + 1) % snakeColors.length;
