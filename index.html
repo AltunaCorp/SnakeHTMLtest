@@ -5,44 +5,211 @@
 <title>Snake — Versión Avanzada (HTML + Canvas)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  :root{
-    --bg:#071020;
-    --panel:#071826;
-    --accent:#22c55e;
-    --muted:#94a3b8;
-    --danger:#ef4444;
-    --card: rgba(255,255,255,0.03);
-  }
-  html,body{height:100%;margin:0;background:var(--bg);font-family:Inter,Segoe UI,Roboto,system-ui,Arial;}
-  .wrap{display:flex;flex-direction:row;gap:20px;align-items:flex-start;justify-content:center;padding:18px;box-sizing:border-box;}
-  #ui { width:360px; color:#cbd5e1; }
-  #title{font-size:28px;color:var(--accent);font-weight:700;margin-bottom:6px}
-  .card{background:var(--panel);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);margin-bottom:12px}
-  .muted{color:var(--muted);font-size:13px}
-  .btn{display:inline-block;padding:10px 14px;border-radius:10px;background:#0f1724;color:#fff;cursor:pointer;margin-right:8px;border:1px solid rgba(255,255,255,0.03)}
-  .btn:active{transform:translateY(1px)}
-  .menu-item{padding:8px 12px;border-radius:8px;margin:6px 0;display:flex;align-items:center;justify-content:space-between}
-  .menu-item.selected{background:rgba(255,255,255,0.03);outline:1px solid rgba(255,255,255,0.02)}
-  .small{font-size:13px;color:var(--muted)}
-  canvas{border-radius:12px;display:block;background:#071022;box-shadow:0 10px 30px rgba(2,6,23,0.7)}
-  .footer{color:var(--muted);font-size:12px;margin-top:6px}
-  pre{white-space:pre-wrap;word-break:break-word;color:#9ca3af}
-  .kbd{background:#0b1220;border-radius:6px;padding:4px 8px;border:1px solid rgba(255,255,255,0.03);font-size:13px}
+:root{
+  --bg:#071020;
+  --panel:#071826;
+  --accent:#22c55e;
+  --muted:#94a3b8;
+  --danger:#ef4444;
+  --card: rgba(255,255,255,0.03);
+}
+
+html,body{
+  height:100%;
+  margin:0;
+  background:var(--bg);
+  font-family:Inter,Segoe UI,Roboto,system-ui,Arial;
+  overflow-x:hidden;
+}
+
+/* Panel lateral fijo a la derecha, 20% más fino */
+#ui {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  width: 288px; /* antes 360px */
+  color:#cbd5e1;
+  z-index: 10;
+  max-height: 95vh;
+  overflow-y:auto; /* scroll interno si hay mucho contenido */
+}
+
+#title{font-size:28px;color:var(--accent);font-weight:700;margin-bottom:6px}
+
+.card{
+  background:var(--panel);
+  padding:14px;
+  border-radius:12px;
+  box-shadow:0 6px 18px rgba(2,6,23,0.6);
+  margin-bottom:12px;
+}
+
+.muted{color:var(--muted);font-size:13px}
+
+.btn{
+  display:inline-block;
+  padding:10px 14px;
+  border-radius:10px;
+  background:#0f1724;
+  color:#fff;
+  cursor:pointer;
+  margin-right:8px;
+  border:1px solid rgba(255,255,255,0.03);
+}
+.btn:active{transform:translateY(1px)}
+
+.menu-item{
+  padding:8px 12px;
+  border-radius:8px;
+  margin:6px 0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.menu-item.selected{background:rgba(255,255,255,0.03);outline:1px solid rgba(255,255,255,0.02)}
+
+.small{font-size:13px;color:var(--muted)}
+
+canvas{
+  border-radius:12px;
+  display:block;
+  background:#071022;
+  box-shadow:0 10px 30px rgba(2,6,23,0.7);
+}
+
+/* Contenedor del canvas */
+.wrap {
+  margin-right: 308px; /* dejar espacio para el panel más fino */
+  display:flex;
+  flex-direction:row;
+  gap:20px;
+  align-items:flex-start;
+  justify-content:center;
+  padding:18px;
+  box-sizing:border-box;
+}
+
+.footer{color:var(--muted);font-size:12px;margin-top:6px}
+
+pre{white-space:pre-wrap;word-break:break-word;color:#9ca3af}
+
+.kbd{
+  background:#0b1220;
+  border-radius:6px;
+  padding:4px 8px;
+  border:1px solid rgba(255,255,255,0.03);
+  font-size:13px;
+}
+
+/* Banner simulado gris */
+.ad-sim {
+  background:#2d3748;
+  color:#cbd5e1;
+  padding:10px;
+  border-radius:8px;
+  text-align:center;
+  font-size:14px;
+  margin:10px auto;
+  max-width:720px;
+}
 </style>
 </head>
 <body>
-<div style="display:flex;align-items:flex-start;justify-content:center;">
-  <div class="wrap">
-    <!-- Game Canvas -->
-    <div>
-      <canvas id="game" width="720" height="480"></canvas>
-      <div style="display:flex;gap:10px;margin-top:10px;align-items:center;justify-content:center">
-        <button class="btn" id="btnPause">Pausa</button>
-        <button class="btn" id="btnRestart">Reiniciar</button>
-        <div class="small">Controles: <span class="kbd">Flechas</span> / <span class="kbd">WASD</span> · <span class="kbd">Enter</span> = seleccionar</div>
-      </div>
-      <div class="footer" style="text-align:center;margin-top:8px">Diseñado para probar localmente — servidor requerido</div>
+
+<!-- Panel lateral derecho -->
+<div id="ui">
+  <div id="title">Snake Avanzado</div>
+
+  <div class="card">
+    <div>Vidas: <span id="livesLabel">3</span></div>
+    <div>Puntuación: <span id="scoreLabel">0</span></div>
+  </div>
+
+  <div class="card">
+    <button class="btn" id="btnPause">Pausa</button>
+    <button class="btn" id="btnRestart">Reiniciar</button>
+  </div>
+
+  <div class="card">
+    <div class="small">Controles: Flechas / WASD · Enter = seleccionar</div>
+  </div>
+
+  <div class="card" id="menuCard">
+    <div style="font-weight:700;margin-bottom:6px">Menú</div>
+    <div id="menuOptions">
+      <div class="menu-item selected" data-index="0">Básico <span class="small">velocidad lenta</span></div>
+      <div class="menu-item" data-index="1">Fácil <span class="small">menos obstáculos</span></div>
+      <div class="menu-item" data-index="2">Normal <span class="small">balanceado</span></div>
+      <div class="menu-item" data-index="3">Difícil <span class="small">más obstáculos</span></div>
     </div>
+    <div style="margin-top:10px;">
+      <button class="btn" id="btnStart">Iniciar juego</button>
+      <button class="btn" id="btnTutorial">Tutorial</button>
+    </div>
+  </div>
+
+  <div class="card" id="statsCard">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-weight:700" id="labelMode">Modo: Normal</div>
+        <div class="muted" id="labelInfo">Puntaje, vidas y velocidad</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:800;font-size:20px" id="scoreLabel">0</div>
+        <div class="small">Puntos</div>
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:10px 0">
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="small">Vidas: <span id="livesLabel">1</span></div>
+      <div class="small">Comidas: <span id="foodCount">0</span></div>
+      <div class="small">Vel (ms): <span id="tickLabel">100</span></div>
+    </div>
+  </div>
+
+  <div class="card" id="controlsCard">
+    <div style="font-weight:700">Opciones rápidas</div>
+    <div style="margin-top:8px" class="small">
+      <div>- Espacio: Pausa/Continuar</div>
+      <div>- Enter: Seleccionar en menú / Reiniciar tras Game Over</div>
+      <div>- Esc: Volver al menú</div>
+    </div>
+  </div>
+
+  <div class="card" id="credits">
+    <div style="font-weight:700">Detalles</div>
+    <div class="muted small" style="margin-top:8px">
+      - Comida roja (crece)<br>
+      - Veneno violeta (pierde juego)<br>
+      - Corazón amarillo (da vida extra)<br>
+      - Obstáculos grises (matan)<br>
+    </div>
+  </div>
+</div>
+
+<!-- Banner superior REAL -->
+<div style="text-align:center;margin-bottom:10px">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4708183492397858" crossorigin="anonymous"></script>
+  <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-4708183492397858" data-ad-slot="6859992512" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
+<!-- Banner superior SIMULADO -->
+<div class="ad-sim">[ Banner Superior Simulado en Gris ]</div>
+
+<!-- Canvas del Juego -->
+<div style="display:flex;justify-content:center;align-items:flex-start;">
+  <div class="wrap">
+    <canvas id="game" width="720" height="480"></canvas>
+    <div class="footer" style="text-align:center;margin-top:8px">Diseñado para probar localmente — servidor requerido</div>
+  </div>
+</div>
+
+</body>
+</html>
+
 
     <!-- UI -->
     <div id="ui">
