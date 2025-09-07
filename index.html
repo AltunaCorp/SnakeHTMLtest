@@ -172,8 +172,8 @@ function hexToRgb(hex) {
 }
 
 // CONFIG
-const numStars = 6000;
-const numComets = 500;
+const numStars = 8000;
+const numComets = 700;
 const numNebulas = 2;
 let focalLength = splashCanvas.width/2;
 
@@ -208,7 +208,7 @@ function drawSplash() {
 
     // Estrellas
     stars.forEach(star => {
-        star.z -= 8;
+        star.z -= 30;
         if(star.z <= 0){
             star.x = (Math.random()-0.5)*splashCanvas.width;
             star.y = (Math.random()-0.5)*splashCanvas.height;
@@ -233,7 +233,7 @@ function drawSplash() {
 
     // Cometas
     comets.forEach(comet => {
-        comet.z -= 12;
+        comet.z -= 40;
         if(comet.z <= 0){
             comet.x = (Math.random()-0.5)*splashCanvas.width;
             comet.y = (Math.random()-0.5)*splashCanvas.height;
@@ -367,6 +367,63 @@ difficultyButtons.forEach((btn, index) => {
 </div>
 
 <script>
+
+ class Particle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = Math.random() * 2 + 1; // tamaño de partícula
+        this.alpha = 1;
+
+        // 🔹 colores aleatorios
+        const colors = [
+            '#ff0000', '#ffd700', '#00ffff', '#ccff00', 
+            '#ff66cc', '#9400d3', '#ff8000', '#40e0d0'
+        ];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+
+        // 🔹 dispersión circular
+        const angle = Math.random() * Math.PI * 2; // ángulo 0-360°
+        const speed = Math.random() * 5 + 2;       // velocidad radial
+        this.speedX = Math.cos(angle) * speed;
+        this.speedY = Math.sin(angle) * speed;
+    }
+
+    update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.alpha -= 0.02;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = this.hexToRgba(this.color, this.alpha);
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+    }
+
+    hexToRgba(hex, alpha) {
+        const bigint = parseInt(hex.slice(1), 16);
+        const r = (bigint >> 16) & 255;
+        const g = (bigint >> 8) & 255;
+        const b = bigint & 255;
+        return `rgba(${r},${g},${b},${alpha})`;
+    }
+}
+
+let particles = [];
+
+function triggerParticles(x, y) {
+    for (let i = 0; i < 500; i++) {
+        particles.push(new Particle(x, y));
+    }
+}
+
+function updateParticles(ctx) {
+    particles.forEach((p, i) => {
+        p.update();
+        p.draw(ctx);
+        if (p.alpha <= 0) particles.splice(i, 1);
+    });
+}
 /* -----------------------------
    GAME: Snake en Canvas (completo)
    - Menú navegable con flechas/WASD + Enter
@@ -604,6 +661,12 @@ function tick(){
     engine.score++;
     engine.foodEaten++;
 
+    // 🔥 Explosión de partículas en el centro de la celda de comida
+    triggerParticles(
+      engine.food.x * engine.cell + engine.cell / 2,
+      engine.food.y * engine.cell + engine.cell / 2
+    );
+
     // cada 5 comidas aumenta la velocidad y cambia color
     if(engine.score % 5 === 0){
       engine.tickMs *= 0.95;
@@ -751,6 +814,11 @@ if(engine.heart){
   ctx.font = `${12 + Math.round(cell*0.06)}px monospace`;
   ctx.fillText(`Puntos: ${engine.score}`, 14, 24);
   ctx.fillText(`Vidas: ${engine.lives}`, 110, 24);
+
+  // === Dibujar partículas SIEMPRE al final ===
+updateParticles(ctx);
+
+ctx.restore();
 
   // paused / menu / gameover overlay
     // ---------- Overlays ----------
