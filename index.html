@@ -384,7 +384,7 @@ difficultyButtons.forEach((btn, index) => {
 
         // 🔹 dispersión circular
         const angle = Math.random() * Math.PI * 2; // ángulo 0-360°
-        const speed = Math.random() * 5 + 2;       // velocidad radial
+        const speed = Math.random() * 3 + 1;       // velocidad radial
         this.speedX = Math.cos(angle) * speed;
         this.speedY = Math.sin(angle) * speed;
     }
@@ -409,10 +409,12 @@ difficultyButtons.forEach((btn, index) => {
     }
 }
 
+
+
 let particles = [];
 
 function triggerParticles(x, y) {
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < 350; i++) {
         particles.push(new Particle(x, y));
     }
 }
@@ -424,6 +426,37 @@ function updateParticles(ctx) {
         if (p.alpha <= 0) particles.splice(i, 1);
     });
 }
+
+function triggerDust(x, y) {
+    for (let i = 0; i < 3; i++) { // pocas partículas
+        particles.push(new DustParticle(x, y));
+    }
+}
+
+
+class DustParticle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = Math.random() * 2 + 1; // más pequeñas
+        this.speedX = (Math.random() - 0.5) * 1.5;
+        this.speedY = (Math.random() - 0.5) * 1.5;
+        this.alpha = 1;
+        this.color = "#99ff99"; // verde claro
+    }
+
+    update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.alpha -= 0.03; // se desvanece rápido
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = `rgba(144, 238, 144, 0.8)${this.alpha})`; // marrón con transparencia
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+    }
+}
+
 /* -----------------------------
    GAME: Snake en Canvas (completo)
    - Menú navegable con flechas/WASD + Enter
@@ -455,10 +488,10 @@ window.addEventListener('resize', () => { resizeCanvas(); engine && engine.onRes
 /* ---------- Dificultades ---------- */
 const DIFFICULTIES = [
   { name: 'Básico', speedMs: 150, numObstacles: 0, poisonChance: 0.00, extraLifeChance: 0.00 },
-  { name: 'Fácil',  speedMs: 140, numObstacles: 6, poisonChance: 0.03, extraLifeChance: 0.03 },
-  { name: 'Normal', speedMs: 110, numObstacles: 10, poisonChance: 0.08, extraLifeChance: 0.02 },
-  { name: 'Difícil',speedMs: 85,  numObstacles: 16, poisonChance: 0.16, extraLifeChance: 0.01 },
-  { name: 'Extremo',speedMs: 70,  numObstacles: 20, poisonChance: 0.25, extraLifeChance: 0.005 }
+  { name: 'Fácil',  speedMs: 140, numObstacles: 6, poisonChance: 0.20, extraLifeChance: 0.07 },
+  { name: 'Normal', speedMs: 110, numObstacles: 10, poisonChance: 0.20, extraLifeChance: 0.05 },
+  { name: 'Difícil',speedMs: 85,  numObstacles: 16, poisonChance: 0.30, extraLifeChance: 0.03 },
+  { name: 'Extremo',speedMs: 70,  numObstacles: 20, poisonChance: 0.30, extraLifeChance: 0.02}
 ];
 
 /* ---------- Colores ---------- */
@@ -589,7 +622,6 @@ function startNewGame(difficultyIndex){
   engine.nextDir = {x:1,y:0};
   engine.obstacles = Array.from({length:diff.numObstacles}, () => randomFreeCell());
   engine.food = randomFreeCell();
-  engine.poison = Math.random() < diff.poisonChance ? randomFreeCell() : null;
 
   engine.heart = null;
   engine.lastTime = performance.now();
@@ -655,11 +687,22 @@ function tick(){
   const atePoison = engine.poison && posEq(head, engine.poison);
 
   engine.snake.unshift(head);
-  if(!ateFood) engine.snake.pop();
+
+  
+if (!ateFood) {
+    const tail = engine.snake.pop();  // 👈 guardás el último segmento eliminado
+    // 🔹 Generar partículas de polvo en la cola
+    triggerDust(
+        tail.x * engine.cell + engine.cell / 2, 
+        tail.y * engine.cell + engine.cell / 2
+    );
+}
+
 
   if(ateFood){
     engine.score++;
     engine.foodEaten++;
+
 
     // 🔥 Explosión de partículas en el centro de la celda de comida
     triggerParticles(
@@ -676,9 +719,26 @@ function tick(){
     // respawn food
     engine.food = randomFreeCell();
 
-    // chance de generar veneno según dificultad
-    const diff = DIFFICULTIES[engine.difficultyIndex];
-    if(Math.random() < diff.poisonChance) engine.poison = randomFreeCell();
+ // ---------- Veneno logic ----------
+const diff = DIFFICULTIES[engine.difficultyIndex];
+
+// Generar veneno con movimiento o veneno estático dependiendo de la probabilidad
+if (Math.random() < diff.poisonChance) {
+    // Veneno con movimiento
+    engine.poison = {
+        floatX: Math.random() * (canvas.width - engine.cell) + engine.cell / 2,
+        floatY: Math.random() * (canvas.height - engine.cell) + engine.cell / 2,
+        dx: (Math.random() * 2 - 1) * 10.5,
+        dy: (Math.random() * 2 - 1) * 10.5,
+        radius: engine.cell * 0.5
+    };
+} else {
+    // No hay veneno en este ciclo, asegúrate de que `engine.poison` esté vacío
+    engine.poison = null;
+}
+
+
+
 
     // ---------- Heart logic ----------
     // chance de aparecer corazón al comer
@@ -686,8 +746,8 @@ function tick(){
         engine.heart = {
             floatX: Math.random() * (canvas.width - engine.cell) + engine.cell/2,
             floatY: Math.random() * (canvas.height - engine.cell) + engine.cell/2,
-            dx: (Math.random() * 2 - 1) * 4.5,
-            dy: (Math.random() * 2 - 1) * 4.5,
+            dx: (Math.random() * 2 - 1) * 6.5,
+            dy: (Math.random() * 2 - 1) * 6.5,
             radius: engine.cell * 0.35
         };
     }
@@ -730,13 +790,41 @@ if(engine.heart){
     }
 }
 
+if(engine.poison){
+    // mover veneno
+    engine.poison.floatX += engine.poison.dx;
+    engine.poison.floatY += engine.poison.dy;
 
-  if(atePoison){
-    engine.gameOver = true;
-    engine.running = false;
-    renderUI();
-    return;
-  }
+    // rebote en bordes
+    if(engine.poison.floatX - engine.poison.radius < 0 || engine.poison.floatX + engine.poison.radius > canvas.width)
+      engine.poison.dx *= -1;
+    if(engine.poison.floatY - engine.poison.radius < 0 || engine.poison.floatY + engine.poison.radius > canvas.height)
+      engine.poison.dy *= -1;
+
+    // cambio de dirección aleatorio
+    if(Math.random() < 1/60){
+      engine.poison.dx = (Math.random() * 2 - 1) * 10.5;
+      engine.poison.dy = (Math.random() * 2 - 1) * 10.5;
+    }
+
+    // dejar partículas violetas mientras se mueve
+    triggerParticles(engine.poison.floatX, engine.poison.floatY, "#9400d3"); // violeta
+
+    // colisión con la serpiente (cabeza)
+    const headPxX = (head.x + 0.5) * engine.cell;
+    const headPxY = (head.y + 0.5) * engine.cell;
+    const dx = engine.poison.floatX - headPxX;
+    const dy = engine.poison.floatY - headPxY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    if(dist < engine.poison.radius + engine.cell/2){
+        engine.gameOver = true;
+        engine.running = false;
+        renderUI();
+    }
+}
+
+
 }
 
 
@@ -765,11 +853,8 @@ function draw(){
     roundFillCircle(cx, cy, r);
   }
 
-  // Poison
-  if(engine.poison){
-    ctx.fillStyle = poisonColor;
-    roundFillCircle(engine.poison.x*cell + cell/2, engine.poison.y*cell + cell/2, cell*0.30);
-  }
+
+
 
   // Heart
   // ---------- Draw Heart (solo) ----------
@@ -794,6 +879,25 @@ if(engine.heart){
 
 }
 
+// ---------- Draw Poison (solo) ----------
+if(engine.poison){
+    ctx.fillStyle = poisonColor;
+    ctx.beginPath();
+    ctx.arc(engine.poison.floatX, engine.poison.floatY, engine.poison.radius, 0, Math.PI*2);
+    ctx.fill();
+
+    // movimiento oscilante constante
+    engine.poisonFrameCount = (engine.poisonFrameCount || 0) + 1;
+
+    const t = engine.poisonFrameCount / 10;
+    const poisonOscX = Math.sin(t) * 0.25;
+    const poisonOscY = Math.cos(t) * 0.25;
+
+    const px = (engine.poison.x + 0.5 + poisonOscX) * engine.cell;
+    const py = (engine.poison.y + 0.5 + poisonOscY) * engine.cell;
+
+    roundFillCircle(px, py, engine.cell * 0.28);
+}
 
   // Snake color interpolation: progress within 5
   const nextIdx = (engine.colorIndex + 1) % snakeColors.length;
