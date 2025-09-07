@@ -79,7 +79,7 @@ canvas{
 
 /* Contenedor del canvas */
 .wrap {
-  margin-right: 308px; /* dejar espacio para el panel más fino */
+  margin-right: 0px; /* dejar espacio para el panel más fino */
   display:flex;
   flex-direction:row;
   gap:20px;
@@ -112,9 +112,16 @@ pre{white-space:pre-wrap;word-break:break-word;color:#9ca3af}
   margin:10px auto;
   max-width:720px;
 }
+
+#ui {
+  display: none !important;
+}
+
 </style>
 </head>
 <body>
+
+  
 
 <!-- Panel lateral derecho -->
 <div id="ui">
@@ -129,6 +136,9 @@ pre{white-space:pre-wrap;word-break:break-word;color:#9ca3af}
 
 </div>
 
+
+
+
 <!-- Banner superior REAL -->
 <div style="text-align:center;margin-bottom:10px">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4708183492397858" crossorigin="anonymous"></script>
@@ -139,11 +149,155 @@ pre{white-space:pre-wrap;word-break:break-word;color:#9ca3af}
 <!-- Banner superior SIMULADO -->
 <div class="ad-sim">[ Banner Superior Simulado en Gris ]</div>
 
+<!-- Canvas del Splash animado (fondo) -->
+<canvas id="splash" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;"></canvas>
+<script>
+const splashCanvas = document.getElementById('splash');
+const splashCtx = splashCanvas.getContext('2d');
+
+function resizeSplash() {
+    splashCanvas.width = window.innerWidth;
+    splashCanvas.height = window.innerHeight;
+}
+resizeSplash();
+window.addEventListener('resize', resizeSplash);
+
+function hexToRgb(hex) {
+    hex = hex.replace('#','');
+    const bigint = parseInt(hex,16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return [r,g,b];
+}
+
+// CONFIG
+const numStars = 6000;
+const numComets = 500;
+const numNebulas = 2;
+let focalLength = splashCanvas.width/2;
+
+// ESTRELLAS
+const stars = Array.from({length:numStars}, () => ({
+    x: (Math.random()-0.5)*splashCanvas.width,
+    y: (Math.random()-0.5)*splashCanvas.height,
+    z: Math.random()*splashCanvas.width,
+    color: ['#fff','#0ff','#f0f','#0f0','#ff0'][Math.floor(Math.random()*5)]
+}));
+
+// COMETAS
+const comets = Array.from({length:numComets}, () => ({
+    x: (Math.random()-0.5)*splashCanvas.width,
+    y: (Math.random()-0.5)*splashCanvas.height,
+    z: Math.random()*splashCanvas.width,
+    length: Math.random()*100+50,
+    color: ['#ff0','#0ff','#f0f','#0f0','#fff'][Math.floor(Math.random()*5)]
+}));
+
+
+
+function drawSplash() {
+
+  
+    splashCtx.fillStyle = '#000011';
+    splashCtx.fillRect(0,0,splashCanvas.width,splashCanvas.height);
+
+   
+
+    focalLength = splashCanvas.width/2;
+
+    // Estrellas
+    stars.forEach(star => {
+        star.z -= 8;
+        if(star.z <= 0){
+            star.x = (Math.random()-0.5)*splashCanvas.width;
+            star.y = (Math.random()-0.5)*splashCanvas.height;
+            star.z = splashCanvas.width;
+            star.color = ['#fff','#0ff','#f0f','#0f0','#ff0'][Math.floor(Math.random()*5)];
+        }
+        const sx = (star.x / star.z)*focalLength + splashCanvas.width/2;
+        const sy = (star.y / star.z)*focalLength + splashCanvas.height/2;
+        const radius = (1 - star.z/splashCanvas.width)*3;
+
+        splashCtx.beginPath();
+        splashCtx.arc(sx, sy, radius, 0, Math.PI*2);
+        splashCtx.fillStyle = star.color;
+        splashCtx.fill();
+
+        splashCtx.strokeStyle = star.color;
+        splashCtx.beginPath();
+        splashCtx.moveTo(sx, sy);
+        splashCtx.lineTo(sx - (star.x/star.z)*15, sy - (star.y/star.z)*15);
+        splashCtx.stroke();
+    });
+
+    // Cometas
+    comets.forEach(comet => {
+        comet.z -= 12;
+        if(comet.z <= 0){
+            comet.x = (Math.random()-0.5)*splashCanvas.width;
+            comet.y = (Math.random()-0.5)*splashCanvas.height;
+            comet.z = splashCanvas.width;
+            comet.color = ['#ff0','#0ff','#f0f','#0f0','#fff'][Math.floor(Math.random()*5)];
+        }
+        const sx = (comet.x / comet.z)*focalLength + splashCanvas.width/2;
+        const sy = (comet.y / comet.z)*focalLength + splashCanvas.height/2;
+
+        splashCtx.strokeStyle = comet.color;
+        splashCtx.lineWidth = 2;
+        splashCtx.beginPath();
+        splashCtx.moveTo(sx, sy);
+        splashCtx.lineTo(sx - (comet.x/comet.z)*comet.length, sy - (comet.y/comet.z)*comet.length);
+        splashCtx.stroke();
+    });
+
+    requestAnimationFrame(drawSplash);
+}
+
+
+
+drawSplash();
+
+
+
+let splashTimeout = setTimeout(() => {
+    splashCanvas.style.display = 'none';
+    initMenu(); // en vez de mostrar difficultyMenu
+}, 30000);
+
+function startAfterSplash() {
+    clearTimeout(splashTimeout);
+    splashCanvas.style.display = 'none';
+    initMenu();
+}
+
+
+// Click o teclado para saltar el splash
+splashCanvas.addEventListener;
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        startAfterSplash();
+    }
+});
+
+// ---------- Botones del menú ----------
+const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+difficultyButtons.forEach((btn, index) => {
+    btn.addEventListener('click', () => {
+        difficultyMenu.style.display = 'none'; // ocultar menú
+        engine.menuIndex = index;             // asignar dificultad al menú
+        engine.difficultyIndex = index;       // sincronizar con el engine
+        startNewGame(index);                  // iniciar el juego
+    });
+});
+
+</script>
+
+
 <!-- Canvas del Juego -->
 <div style="display:flex;justify-content:center;align-items:flex-start;">
   <div class="wrap">
     <canvas id="game" width="720" height="480"></canvas>
-    <div class="footer" style="text-align:center;margin-top:8px">Diseñado para probar localmente — servidor requerido</div>
   </div>
 </div>
 
@@ -230,9 +384,9 @@ const ctx = canvas.getContext('2d');
 // Responsive canvas (wide-friendly): ocupará un área grande pero manteniendo proporción
 function resizeCanvas() {
   // Queremos un área wide con límite máximo:
-  const maxWidth = Math.min(window.innerWidth - 420, 1200); // deja espacio para UI
+  const maxWidth = Math.min(window.innerWidth - 0, 1400); // deja espacio para UI
   const width = Math.max(480, maxWidth);
-  const aspect = 16/9;
+  const aspect = 16/8;
   const height = Math.round(width / aspect);
 
   canvas.width = width;
@@ -270,7 +424,7 @@ const foodColor = '#f43f5e'; // rojo
 const poisonColor = '#9b5de5'; // violeta
 const heartColor = '#ffd166'; // amarillo
 const obstacleColor = '#64748b';
-const gridBg = '#06121a';
+const gridBg = '#000000';
 
 /* ---------- Motor del juego ---------- */
 const engine = {
@@ -348,6 +502,8 @@ function initMenu(){
   renderUI(); // highlight selection
 }
 
+
+
 function startNewGame(difficultyIndex){
   // set difficulty
   engine.difficultyIndex = difficultyIndex;
@@ -357,6 +513,8 @@ function startNewGame(difficultyIndex){
   engine.foodEaten = 0;
   engine.lives = 1;
   engine.colorIndex = 0;
+
+ 
 
   // (re)setup grid for current canvas size
   setupGrid();
@@ -603,8 +761,9 @@ if(engine.heart){
   } else if(engine.paused){
     drawCenteredText('PAUSA', 'Presiona Espacio para continuar');
   } else if(engine.gameOver){
-    drawCenteredText('GAME OVER', 'Enter: Reiniciar · Esc: Menú');
-  }
+  drawCenteredText('GAME OVER', 'Space: Reiniciar · Esc: Menú');
+}
+
 
 
   ctx.restore();
@@ -680,14 +839,18 @@ window.addEventListener('keydown', (e) => {
     return;
   }
 
-  // ---------- Barra espaciadora: pausa rápida ----------
   if(e.code === 'Space'){
-    if(engine.inMenu || engine.pausedMenu) return;
-    engine.paused = !engine.paused;
-    renderUI();
+    if(engine.inMenu || engine.pausedMenu){
+        engine.paused = !engine.paused;
+        renderUI();
+    } else if(engine.gameOver){
+        startNewGame(engine.difficultyIndex);
+    }
     e.preventDefault();
     return;
-  }
+}
+
+
 
   // ---------- Navegación menú principal ----------
   if(engine.inMenu){
@@ -749,8 +912,9 @@ window.addEventListener('keydown', (e) => {
   }
 
   // ---------- Controles en Game Over ----------
+// ---------- Controles en Game Over ----------
 if(engine.gameOver){
-  if(e.code === 'Enter'){
+  if(e.code === 'Space'){ // <--- cambiamos Enter por Space
     // reiniciar con misma dificultad
     startNewGame(engine.difficultyIndex);
     e.preventDefault();
@@ -765,6 +929,7 @@ if(engine.gameOver){
     return;
   }
 }
+
 
 
   // ---------- Controles dentro del juego ----------

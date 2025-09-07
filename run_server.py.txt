@@ -10,3 +10,109 @@ with socketserver.TCPServer(("", PORT), Handler) as httpd:
     print(f"Servidor corriendo en http://localhost:{PORT}")
     webbrowser.open(f"http://localhost:{PORT}")
     httpd.serve_forever()
+
+<!-- Canvas del Splash animado (fondo) -->
+<canvas id="splash" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;"></canvas>
+<script>
+const splashCanvas = document.getElementById('splash');
+const splashCtx = splashCanvas.getContext('2d');
+
+function resizeSplash() {
+    splashCanvas.width = window.innerWidth;
+    splashCanvas.height = window.innerHeight;
+}
+resizeSplash();
+window.addEventListener('resize', resizeSplash);
+
+function hexToRgb(hex) {
+    hex = hex.replace('#','');
+    const bigint = parseInt(hex,16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return [r,g,b];
+}
+
+// CONFIG
+const numStars = 2400;
+const numComets = 100;
+const numNebulas = 2;
+let focalLength = splashCanvas.width/2;
+
+// ESTRELLAS
+const stars = Array.from({length:numStars}, () => ({
+    x: (Math.random()-0.5)*splashCanvas.width,
+    y: (Math.random()-0.5)*splashCanvas.height,
+    z: Math.random()*splashCanvas.width,
+    color: ['#fff','#0ff','#f0f','#0f0','#ff0'][Math.floor(Math.random()*5)]
+}));
+
+// COMETAS
+const comets = Array.from({length:numComets}, () => ({
+    x: (Math.random()-0.5)*splashCanvas.width,
+    y: (Math.random()-0.5)*splashCanvas.height,
+    z: Math.random()*splashCanvas.width,
+    length: Math.random()*100+50,
+    color: ['#ff0','#0ff','#f0f','#0f0','#fff'][Math.floor(Math.random()*5)]
+}));
+
+
+
+function drawSplash() {
+    splashCtx.fillStyle = '#000011';
+    splashCtx.fillRect(0,0,splashCanvas.width,splashCanvas.height);
+
+   
+
+    focalLength = splashCanvas.width/2;
+
+    // Estrellas
+    stars.forEach(star => {
+        star.z -= 8;
+        if(star.z <= 0){
+            star.x = (Math.random()-0.5)*splashCanvas.width;
+            star.y = (Math.random()-0.5)*splashCanvas.height;
+            star.z = splashCanvas.width;
+            star.color = ['#fff','#0ff','#f0f','#0f0','#ff0'][Math.floor(Math.random()*5)];
+        }
+        const sx = (star.x / star.z)*focalLength + splashCanvas.width/2;
+        const sy = (star.y / star.z)*focalLength + splashCanvas.height/2;
+        const radius = (1 - star.z/splashCanvas.width)*3;
+
+        splashCtx.beginPath();
+        splashCtx.arc(sx, sy, radius, 0, Math.PI*2);
+        splashCtx.fillStyle = star.color;
+        splashCtx.fill();
+
+        splashCtx.strokeStyle = star.color;
+        splashCtx.beginPath();
+        splashCtx.moveTo(sx, sy);
+        splashCtx.lineTo(sx - (star.x/star.z)*15, sy - (star.y/star.z)*15);
+        splashCtx.stroke();
+    });
+
+    // Cometas
+    comets.forEach(comet => {
+        comet.z -= 12;
+        if(comet.z <= 0){
+            comet.x = (Math.random()-0.5)*splashCanvas.width;
+            comet.y = (Math.random()-0.5)*splashCanvas.height;
+            comet.z = splashCanvas.width;
+            comet.color = ['#ff0','#0ff','#f0f','#0f0','#fff'][Math.floor(Math.random()*5)];
+        }
+        const sx = (comet.x / comet.z)*focalLength + splashCanvas.width/2;
+        const sy = (comet.y / comet.z)*focalLength + splashCanvas.height/2;
+
+        splashCtx.strokeStyle = comet.color;
+        splashCtx.lineWidth = 2;
+        splashCtx.beginPath();
+        splashCtx.moveTo(sx, sy);
+        splashCtx.lineTo(sx - (comet.x/comet.z)*comet.length, sy - (comet.y/comet.z)*comet.length);
+        splashCtx.stroke();
+    });
+
+    requestAnimationFrame(drawSplash);
+}
+
+drawSplash();
+</script>
