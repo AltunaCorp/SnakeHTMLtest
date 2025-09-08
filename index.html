@@ -251,6 +251,26 @@ function drawSplash() {
         splashCtx.stroke();
     });
 
+    const text = 'Press Space to Start';
+const fontSize = Math.min(48, splashCanvas.height / 12);
+
+// Fuente más elegante y profesional
+splashCtx.font = `${fontSize}px "Arial Black", Arial, sans-serif`;
+splashCtx.textAlign = 'center';
+splashCtx.textBaseline = 'middle';
+
+// Relleno semi-transparente más sutil
+splashCtx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+splashCtx.fillText(text, splashCanvas.width / 2, splashCanvas.height / 2);
+
+// Borde más fino
+splashCtx.lineWidth = 2; // borde más delgado
+splashCtx.strokeStyle = '#FFD700'; // amarillo dorado
+splashCtx.strokeText(text, splashCanvas.width / 2, splashCanvas.height / 2);
+
+
+
+
     requestAnimationFrame(drawSplash);
 }
 
@@ -377,9 +397,12 @@ difficultyButtons.forEach((btn, index) => {
 
         // 🔹 colores aleatorios
         const colors = [
-            '#ff0000', '#ffd700', '#00ffff', '#ccff00', 
-            '#ff66cc', '#9400d3', '#ff8000', '#40e0d0'
-        ];
+    '#ffffff', // blanco puro
+    '#f0f0f0', // blanco grisáceo
+    '#e6e6e6', // blanco cálido
+  
+];
+
         this.color = colors[Math.floor(Math.random() * colors.length)];
 
         // 🔹 dispersión circular
@@ -433,6 +456,13 @@ function triggerDust(x, y) {
     }
 }
 
+// 🔥 función para disparar partículas de fuego
+function triggerFireParticles(x, y) {
+    for (let i = 0; i < 350; i++) {
+        particles.push(new FireParticle(x, y));
+    }
+}
+
 
 class DustParticle {
     constructor(x, y) {
@@ -457,6 +487,44 @@ class DustParticle {
     }
 }
 
+class FireParticle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = Math.random() * 2 + 1; // tamaño de partícula
+        this.alpha = 1;
+
+        // 🔥 colores de fuego
+        const colors = ['#ff0000', '#ff4500', '#ff8c00', '#ffd700']; // rojo fuerte, rojo-naranja, naranja fuerte, amarillo
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+
+        // 🔹 dispersión circular
+        const angle = Math.random() * Math.PI * 2; // ángulo 0-360°
+        const speed = Math.random() * 5 + 1;       // velocidad radial
+        this.speedX = Math.cos(angle) * speed;
+        this.speedY = Math.sin(angle) * speed;
+    }
+
+    update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.alpha -= 0.02;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = this.hexToRgba(this.color, this.alpha);
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+    }
+
+    hexToRgba(hex, alpha) {
+        const bigint = parseInt(hex.slice(1), 16);
+        const r = (bigint >> 16) & 255;
+        const g = (bigint >> 8) & 255;
+        const b = bigint & 255;
+        return `rgba(${r},${g},${b},${alpha})`;
+    }
+}
+
 /* -----------------------------
    GAME: Snake en Canvas (completo)
    - Menú navegable con flechas/WASD + Enter
@@ -470,6 +538,10 @@ class DustParticle {
 /* ---------- Configuración general ---------- */
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+
+let splashActive = true;           // Splash activo
+let showPressSpaceSplash = true;   // Mostramos el texto en splash
+
 
 // Responsive canvas (wide-friendly): ocupará un área grande pero manteniendo proporción
 function resizeCanvas() {
@@ -532,8 +604,7 @@ const engine = {
   lives: 1,
   colorIndex: 0,
   pausedMenu: false,
-pauseMenuIndex: 0,
-
+  pauseMenuIndex: 0,
 
   // game objects
   snake: [],
@@ -551,7 +622,11 @@ pauseMenuIndex: 0,
 
   // menu selection
   menuIndex: 2, // default selected
+
+  // 🔹 nuevo: tema del fondo
+  theme: "space" // por defecto el juego arranca en espacial
 };
+
 
 /* ---------- Utilidades ---------- */
 function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
@@ -581,6 +656,30 @@ function setupGrid(){
   engine.rows = Math.floor(canvas.height / cell);
 }
 setupGrid();
+
+const staticStars = Array.from({length:100}, () => ({
+  x: Math.random() * canvas.width,
+  y: Math.random() * canvas.height,
+  size: Math.random() * 2 + 1
+}));
+
+const movingStars = Array.from({length:60}, () => ({
+  x: Math.random() * canvas.width,
+  y: Math.random() * canvas.height,
+  dy: Math.random() * 0.5 + 0.2,
+  size: Math.random() * 2 + 1,
+  alpha: Math.random()
+}));
+
+const splashComets = Array.from({length:5}, () => ({  // 👈 cambié el nombre
+  x: Math.random() * canvas.width,
+  y: Math.random() * canvas.height * 0.5,
+  dx: Math.random() * 5 + 2,
+  dy: Math.random() * 1 - 0.5,
+  length: Math.random() * 50 + 50,
+  color: ['#ff0','#0ff','#f0f','#0f0','#fff'][Math.floor(Math.random()*5)]
+}));
+
 
 /* ---------- Core functions ---------- */
 function initMenu(){
@@ -807,8 +906,9 @@ if(engine.poison){
       engine.poison.dy = (Math.random() * 2 - 1) * 10.5;
     }
 
-    // dejar partículas violetas mientras se mueve
-    triggerParticles(engine.poison.floatX, engine.poison.floatY, "#9400d3"); // violeta
+    // disparar partículas de fuego mientras se mueve
+triggerFireParticles(engine.poison.floatX, engine.poison.floatY);
+
 
     // colisión con la serpiente (cabeza)
     const headPxX = (head.x + 0.5) * engine.cell;
@@ -825,14 +925,76 @@ if(engine.poison){
 }
 
 
+
+
 }
 
 
 /* ---------- Main render ---------- */
 function draw(){
-  // clear
-  ctx.fillStyle = gridBg;
+
+  // 🔹 Fondo dinámico según theme
+  if (engine.theme === "space") {
+  // fondo negro con sutil galaxia
+  const gradient = ctx.createRadialGradient(
+    canvas.width/2, canvas.height/2, 0,
+    canvas.width/2, canvas.height/2, canvas.width
+  );
+  gradient.addColorStop(0, "#000011");
+  gradient.addColorStop(1, "#000033");
+  ctx.fillStyle = gradient;
   ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // estrellas fijas
+  staticStars.forEach(star => {
+    ctx.fillStyle = "white";
+    ctx.fillRect(star.x, star.y, star.size, star.size);
+  });
+
+  // estrellas móviles/parpadeantes
+  movingStars.forEach(star => {
+    star.y += star.dy;
+    if(star.y > canvas.height) star.y = 0;
+    star.alpha += (Math.random()-0.5) * 0.05;
+    star.alpha = Math.min(Math.max(star.alpha,0.2),1);
+    ctx.fillStyle = `rgba(255,255,255,${star.alpha})`;
+    ctx.fillRect(star.x, star.y, star.size, star.size);
+  });
+
+  // cometas
+splashComets.forEach(comet => {
+    comet.x += comet.dx;
+    comet.y += comet.dy;
+    if(comet.x - comet.length > canvas.width || comet.y > canvas.height) {
+      comet.x = -comet.length;
+      comet.y = Math.random() * canvas.height * 0.5;
+    }
+    ctx.strokeStyle = comet.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(comet.x, comet.y);
+    ctx.lineTo(comet.x - comet.length, comet.y - comet.dy*10);
+    ctx.stroke();
+});
+
+
+
+
+  } else if (engine.theme === "nature") {
+    // fondo verde natural
+    const gradient = ctx.createLinearGradient(0,0,0,canvas.height);
+    gradient.addColorStop(0,"#88cc66"); // verde claro
+    gradient.addColorStop(1,"#335522"); // verde oscuro
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  } else {
+    // fallback (gris)
+    ctx.fillStyle = "#222";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+
+
 
   // grid (optional subtle)
   // draw obstacles
@@ -931,9 +1093,9 @@ ctx.restore();
   } else if(engine.pausedMenu){
     drawPauseMenuOverlay();   // 👈 nuevo
   } else if(engine.paused){
-    drawCenteredText('PAUSA', 'Presiona Espacio para continuar');
+    drawCenteredText('PAUSE', 'Press P to continue');
   } else if(engine.gameOver){
-  drawCenteredText('GAME OVER', 'Space: Reiniciar · Esc: Menú');
+  drawCenteredText('GAME OVER', 'R: Restart · Esc: Menú');
 }
 
 
@@ -994,51 +1156,82 @@ window.addEventListener('keydown', (e) => {
   if(keys[e.code]) return; // evitar repeticiones
   keys[e.code] = true;
 
-  // ---------- Escape: menú de pausa ----------
-  if(e.code === 'Escape'){
-    if(!engine.inMenu && !engine.gameOver){
-      // abrir/cerrar menú de pausa
-      engine.pausedMenu = !engine.pausedMenu;
-      engine.paused = engine.pausedMenu; // pausamos el juego
-      engine.pauseMenuIndex = 0; // opción inicial
+ 
+// ---------- Escape: navega o cierra menús ----------
+if(e.code === 'Escape') {
+    e.preventDefault();
+
+    if(engine.inSubMenu) { 
+        // si estamos en un submenú, volvemos al menú principal
+        engine.inSubMenu = false;
+        renderUI();
+        return;
+    }
+
+    if(engine.inMenu || engine.pausedMenu) {
+        // si estamos en el menú principal de pausa, cerramos todo
+        engine.inMenu = false;
+        engine.pausedMenu = false;
+        engine.paused = false; // reanuda el juego
+        renderUI();
+        return;
+    }
+
+    // si estamos en el juego sin menú abierto, abrimos menú de pausa
+    engine.pausedMenu = true;
+    engine.paused = true;
+    engine.pauseMenuIndex = 0;
+    renderUI();
+}
+
+
+
+
+
+  // ---------- Space: pausar/reanudar en menú ----------
+  if (e.code === 'Space') {
+    if(engine.inMenu || engine.pausedMenu){
+      engine.paused = !engine.paused;
       renderUI();
-    } else if(engine.inMenu){
-      // si ya está en menú principal, reinicia
-      engine.running = false;
-      initMenu();
     }
     e.preventDefault();
     return;
   }
 
-  if(e.code === 'Space'){
-    if(engine.inMenu || engine.pausedMenu){
-        engine.paused = !engine.paused;
-        renderUI();
-    } else if(engine.gameOver){
-        startNewGame(engine.difficultyIndex);
+  // ---------- P: pausar/reanudar ----------
+  if (e.key === 'p' || e.key === 'P') {
+    if(!engine.inMenu && !engine.gameOver){
+      engine.paused = !engine.paused;
+      renderUI();
     }
     e.preventDefault();
     return;
-}
+  }
 
-
+  // ---------- R: reiniciar ----------
+  if(e.key === 'r' || e.key === 'R'){
+    if(engine.gameOver){
+      startNewGame(engine.difficultyIndex);
+    }
+    e.preventDefault();
+    return;
+  }
 
   // ---------- Navegación menú principal ----------
   if(engine.inMenu){
-    if(e.code === 'ArrowUp' || e.code === 'KeyW') {
+    if(e.code === 'ArrowUp' || e.code === 'KeyW'){
       engine.menuIndex = (engine.menuIndex - 1 + DIFFICULTIES.length) % DIFFICULTIES.length;
       renderUI();
       e.preventDefault();
       return;
     }
-    if(e.code === 'ArrowDown' || e.code === 'KeyS') {
+    if(e.code === 'ArrowDown' || e.code === 'KeyS'){
       engine.menuIndex = (engine.menuIndex + 1) % DIFFICULTIES.length;
       renderUI();
       e.preventDefault();
       return;
     }
-    if(e.code === 'Enter') {
+    if(e.code === 'Enter'){
       startNewGame(engine.menuIndex);
       e.preventDefault();
       return;
@@ -1060,18 +1253,18 @@ window.addEventListener('keydown', (e) => {
       return;
     }
     if(e.code === 'Enter'){
-      if(engine.pauseMenuIndex === 0){ 
+      if(engine.pauseMenuIndex === 0){
         // continuar
         engine.pausedMenu = false;
         engine.paused = false;
       }
-      if(engine.pauseMenuIndex === 1){ 
+      if(engine.pauseMenuIndex === 1){
         // cambiar modo (lleva al menú principal)
         engine.pausedMenu = false;
         engine.inMenu = true;
         initMenu();
       }
-      if(engine.pauseMenuIndex === 2){ 
+      if(engine.pauseMenuIndex === 2){
         // volver al menú principal
         engine.pausedMenu = false;
         engine.inMenu = true;
@@ -1083,47 +1276,29 @@ window.addEventListener('keydown', (e) => {
     }
   }
 
-  // ---------- Controles en Game Over ----------
-// ---------- Controles en Game Over ----------
-if(engine.gameOver){
-  if(e.code === 'Space'){ // <--- cambiamos Enter por Space
-    // reiniciar con misma dificultad
-    startNewGame(engine.difficultyIndex);
-    e.preventDefault();
-    return;
-  }
-  if(e.code === 'Escape'){
-    // volver al menú principal
-    engine.inMenu = true;
-    engine.gameOver = false;
-    initMenu();
-    e.preventDefault();
-    return;
-  }
-}
-
-
-
+  
   // ---------- Controles dentro del juego ----------
   if(!engine.inMenu && !engine.gameOver && !engine.pausedMenu){
-    if(e.code === 'ArrowLeft' || e.code === 'KeyA') {
-      if(engine.dir.x !== 1) engine.nextDir = {x:-1,y:0};
+    if(e.code === 'ArrowLeft' || e.code === 'KeyA'){
+      if(engine.dir.x !== 1) engine.nextDir = {x:-1, y:0};
     }
-    if(e.code === 'ArrowRight' || e.code === 'KeyD') {
-      if(engine.dir.x !== -1) engine.nextDir = {x:1,y:0};
+    if(e.code === 'ArrowRight' || e.code === 'KeyD'){
+      if(engine.dir.x !== -1) engine.nextDir = {x:1, y:0};
     }
-    if(e.code === 'ArrowUp' || e.code === 'KeyW') {
-      if(engine.dir.y !== 1) engine.nextDir = {x:0,y:-1};
+    if(e.code === 'ArrowUp' || e.code === 'KeyW'){
+      if(engine.dir.y !== 1) engine.nextDir = {x:0, y:-1};
     }
-    if(e.code === 'ArrowDown' || e.code === 'KeyS') {
-      if(engine.dir.y !== -1) engine.nextDir = {x:0,y:1};
+    if(e.code === 'ArrowDown' || e.code === 'KeyS'){
+      if(engine.dir.y !== -1) engine.nextDir = {x:0, y:1};
     }
     if(e.code === 'Enter' && engine.gameOver){
       // reinicio con misma dificultad
       startNewGame(engine.difficultyIndex);
     }
   }
-});
+
+}); // cierre correcto del listener
+
 
 window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
