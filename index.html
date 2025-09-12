@@ -274,31 +274,35 @@ splashCtx.strokeText(text, splashCanvas.width / 2, splashCanvas.height / 2);
     requestAnimationFrame(drawSplash);
 }
 
-
-
 drawSplash();
-
-
 
 let splashTimeout = setTimeout(() => {
     splashCanvas.style.display = 'none';
     initMenu(); // en vez de mostrar difficultyMenu
+    removeSplashListener(); // removemos listener cuando el splash termina solo
 }, 30000);
 
 function startAfterSplash() {
     clearTimeout(splashTimeout);
     splashCanvas.style.display = 'none';
     initMenu();
+    removeSplashListener(); // removemos listener al saltar el splash
 }
 
-
-// Click o teclado para saltar el splash
-splashCanvas.addEventListener;
-window.addEventListener('keydown', (e) => {
+// listener temporal solo para el splash
+function onSpaceSplash(e) {
     if (e.code === 'Space') {
         startAfterSplash();
     }
-});
+}
+
+function removeSplashListener() {
+    window.removeEventListener('keydown', onSpaceSplash);
+}
+
+// agregamos el listener temporal
+window.addEventListener('keydown', onSpaceSplash);
+
 
 // ---------- Botones del menú ----------
 const difficultyButtons = document.querySelectorAll('.difficulty-btn');
@@ -561,7 +565,7 @@ window.addEventListener('resize', () => { resizeCanvas(); engine && engine.onRes
 const DIFFICULTIES = [
   { name: 'Básico', speedMs: 150, numObstacles: 0, poisonChance: 0.00, extraLifeChance: 0.00 },
   { name: 'Fácil',  speedMs: 140, numObstacles: 6, poisonChance: 0.20, extraLifeChance: 0.07 },
-  { name: 'Normal', speedMs: 110, numObstacles: 10, poisonChance: 0.20, extraLifeChance: 0.05 },
+  { name: 'Normal', speedMs: 110, numObstacles: 10, poisonChance: 0.60, extraLifeChance: 0.75 },
   { name: 'Difícil',speedMs: 95,  numObstacles: 16, poisonChance: 0.35, extraLifeChance: 0.03 },
   { name: 'Extremo',speedMs: 80,  numObstacles: 20, poisonChance: 0.40, extraLifeChance: 0.02}
 ];
@@ -590,7 +594,7 @@ const gridBg = '#000000';
 
 /* ---------- Motor del juego ---------- */
 const engine = {
-  // grid variables (se recalculan cuando se redimensiona)
+  // grid variables
   cell: 24, cols: 30, rows: 18,
 
   // state
@@ -598,7 +602,7 @@ const engine = {
   inMenu: true,
   paused: false,
   gameOver: false,
-  difficultyIndex: 2, // default Normal
+  difficultyIndex: 2,
   score: 0,
   foodEaten: 0,
   lives: 1,
@@ -608,8 +612,8 @@ const engine = {
 
   // game objects
   snake: [],
-  dir: {x:1,y:0},
-  nextDir: {x:1,y:0},
+  dir: {x:1, y:0},
+  nextDir: {x:1, y:0},
   food: null,
   poison: null,
   heart: null,
@@ -621,11 +625,20 @@ const engine = {
   lastTime: null,
 
   // menu selection
-  menuIndex: 2, // default selected
+  menuIndex: 2,
 
-  // 🔹 nuevo: tema del fondo
-  theme: "space" // por defecto el juego arranca en espacial
+  // 🔹 sonidos (ahora es parte del objeto engine)
+  sounds: {
+        eat: new Audio('comidix.mp3.mp3') // ahora está en la raíz
+    },
+
+  // 🔹 tema del fondo
+  theme: "space"
 };
+
+
+
+
 
 
 /* ---------- Utilidades ---------- */
@@ -765,31 +778,82 @@ function tick(){
   if(head.y < 0) head.y = engine.rows - 1;
   if(head.y >= engine.rows) head.y = 0;
 
-  // colisión con sí mismo o con obstáculos
-  if(engine.snake.some(s => posEq(s, head)) || engine.obstacles.some(o => posEq(o, head))){
+ // colisión con sí mismo o con obstáculos
+if (engine.snake.some(s => posEq(s, head)) || engine.obstacles.some(o => posEq(o, head))) {
     engine.lives -= 1;
-    if(engine.lives <= 0){
-      engine.gameOver = true;
-      engine.running = false;
+
+    if (engine.lives <= 0) {
+        engine.gameOver = true;
+        engine.running = false;
     } else {
-      // respawn snake en el centro, mantener score
-      const sx = Math.floor(engine.cols/2), sy = Math.floor(engine.rows/2);
-      engine.snake = [{x:sx,y:sy},{x:sx-1,y:sy},{x:sx-2,y:sy}];
-      engine.dir = {x:1,y:0};
-      engine.nextDir = {x:1,y:0};
+        // 🔹 guardar el tamaño actual de la serpiente
+        const currentLength = engine.snake.length;
+
+        // 🔹 respawn en el centro, con mismo tamaño
+        const sx = Math.floor(engine.cols / 2), sy = Math.floor(engine.rows / 2);
+        engine.snake = [{ x: sx, y: sy }]; // cabeza nueva
+
+        for (let i = 1; i < currentLength; i++) {
+            engine.snake.push({ x: sx - i, y: sy }); // reconstruir hacia la izquierda
+        }
+
+        engine.dir = { x: 1, y: 0 };
+        engine.nextDir = { x: 1, y: 0 };
     }
+
     renderUI();
     return;
-  }
+}
 
-  const ateFood = engine.food && posEq(head, engine.food);
-  const atePoison = engine.poison && posEq(head, engine.poison);
+// colisión con comida
+const ateFood = engine.food && posEq(head, engine.food);
+
+
+// colisión con veneno
+if (engine.poison) {
+    const headPxX = (head.x + 0.5) * engine.cell;
+    const headPxY = (head.y + 0.5) * engine.cell;
+    const dx = engine.poison.floatX - headPxX;
+    const dy = engine.poison.floatY - headPxY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    if (dist < engine.poison.radius + engine.cell / 2) {
+        engine.lives -= 1;
+
+        if (engine.lives <= 0) {
+            engine.gameOver = true;
+            engine.running = false;
+        } else {
+            // 🔹 guardar el tamaño actual de la serpiente
+            const currentLength = engine.snake.length;
+
+            // 🔹 respawn en el centro, con mismo tamaño
+            const sx = Math.floor(engine.cols / 2), sy = Math.floor(engine.rows / 2);
+            engine.snake = [{ x: sx, y: sy }]; // cabeza nueva
+
+            for (let i = 1; i < currentLength; i++) {
+                engine.snake.push({ x: sx - i, y: sy });
+            }
+
+            engine.dir = { x: 1, y: 0 };
+            engine.nextDir = { x: 1, y: 0 };
+        }
+
+        renderUI();
+        return;
+    }
+}
+
+
 
   engine.snake.unshift(head);
 
-  
+if (ateFood) {
+    engine.sounds.eat.currentTime = 0;
+    engine.sounds.eat.play().catch(e => console.log(e));
+}
 if (!ateFood) {
-    const tail = engine.snake.pop();  // 👈 guardás el último segmento eliminado
+    const tail = engine.snake.pop();  //  guardás el último segmento eliminado
     // 🔹 Generar partículas de polvo en la cola
     triggerDust(
         tail.x * engine.cell + engine.cell / 2, 
@@ -917,11 +981,29 @@ triggerFireParticles(engine.poison.floatX, engine.poison.floatY);
     const dy = engine.poison.floatY - headPxY;
     const dist = Math.sqrt(dx*dx + dy*dy);
 
-    if(dist < engine.poison.radius + engine.cell/2){
+    if (dist < engine.poison.radius + engine.cell/2) {
+    engine.lives -= 1;
+
+    if (engine.lives <= 0) {
         engine.gameOver = true;
         engine.running = false;
-        renderUI();
+    } else {
+        const currentLength = engine.snake.length;
+        const sx = Math.floor(engine.cols / 2), sy = Math.floor(engine.rows / 2);
+        engine.snake = [{ x: sx, y: sy }];
+
+        for (let i = 1; i < currentLength; i++) {
+            engine.snake.push({ x: sx - i, y: sy });
+        }
+
+        engine.dir = { x: 1, y: 0 };
+        engine.nextDir = { x: 1, y: 0 };
     }
+
+    renderUI();
+    return;
+}
+
 }
 
 
@@ -1188,15 +1270,16 @@ if(e.code === 'Escape') {
 
 
 
-  // ---------- Space: pausar/reanudar en menú ----------
-  if (e.code === 'Space') {
+ // ---------- Space: volver atrás en menú ----------
+if (e.code === 'Space') {
     if(engine.inMenu || engine.pausedMenu){
-      engine.paused = !engine.paused;
-      renderUI();
+        // simula Escape: volver al menú anterior
+        exitMenu();  // tu función que maneja salir del menú
     }
     e.preventDefault();
     return;
-  }
+}
+
 
   // ---------- P: pausar/reanudar ----------
   if (e.key === 'p' || e.key === 'P') {
